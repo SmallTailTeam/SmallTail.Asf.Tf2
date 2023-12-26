@@ -1,6 +1,6 @@
 using Newtonsoft.Json;
 
-namespace SmallTail.Asf.TfBackpack;
+namespace SmallTail.Asf.TfBackpack.Models;
 
 public class Result
 {

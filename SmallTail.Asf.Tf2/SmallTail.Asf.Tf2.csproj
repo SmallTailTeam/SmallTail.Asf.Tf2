@@ -5,6 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <DebugType>embedded</DebugType>
+        <RootNamespace>SmallTail.Asf.TfBackpack</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>
@@ -13,6 +14,12 @@
       </Reference>
       <Reference Include="Newtonsoft.Json">
         <HintPath>..\Dependencies\Newtonsoft.Json.dll</HintPath>
+      </Reference>
+      <Reference Include="protobuf-net">
+        <HintPath>..\Dependencies\protobuf-net.dll</HintPath>
+      </Reference>
+      <Reference Include="protobuf-net.Core">
+        <HintPath>..\Dependencies\protobuf-net.Core.dll</HintPath>
       </Reference>
       <Reference Include="SteamKit2">
         <HintPath>..\Dependencies\SteamKit2.dll</HintPath>

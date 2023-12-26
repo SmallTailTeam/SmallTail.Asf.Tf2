@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmallTail.Asf.TfBackpack", "SmallTail.Asf.TfBackpack\SmallTail.Asf.TfBackpack.csproj", "{91BB7E9C-5EFA-487E-AEE2-EEEB022C4176}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmallTail.Asf.Tf2", "SmallTail.Asf.Tf2\SmallTail.Asf.Tf2.csproj", "{91BB7E9C-5EFA-487E-AEE2-EEEB022C4176}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
