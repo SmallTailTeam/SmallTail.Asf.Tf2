@@ -14,10 +14,12 @@
       <Reference Include="Newtonsoft.Json">
         <HintPath>..\Dependencies\Newtonsoft.Json.dll</HintPath>
       </Reference>
-    </ItemGroup>
-
-    <ItemGroup>
-      <PackageReference Include="System.ComponentModel.Composition" Version="8.0.0" />
+      <Reference Include="SteamKit2">
+        <HintPath>..\Dependencies\SteamKit2.dll</HintPath>
+      </Reference>
+      <Reference Include="System.Composition.AttributedModel">
+        <HintPath>..\Dependencies\System.Composition.AttributedModel.dll</HintPath>
+      </Reference>
     </ItemGroup>
 
 </Project>

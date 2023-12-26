@@ -1,8 +1,9 @@
-﻿using System.ComponentModel.Composition;
+﻿using System.Composition;
 using System.Reflection;
 using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Plugins.Interfaces;
 using ArchiSteamFarm.Steam;
+using ArchiSteamFarm.Steam.Integration;
 
 namespace SmallTail.Asf.TfBackpack;
 
@@ -21,7 +22,7 @@ public class TfBackpackPlugin : IPlugin, IBotCommand2
     
     public async Task<string?> OnBotCommand(Bot bot, EAccess access, string message, string[] args, ulong steamID = 0)
     {
-        if (args[0] == "tfbackpackslots")
+        if (args[0] == "tf2slots")
         {
             var commandBot = Bot.GetBot(args[1]);
 
@@ -30,22 +31,15 @@ public class TfBackpackPlugin : IPlugin, IBotCommand2
                 return $"<{args[1]}> Bot not found";
             }
 
-            var steamLoginSecureCookie = commandBot.ArchiWebHandler.WebBrowser.CookieContainer
-                .GetAllCookies()
-                .FirstOrDefault(c => c.Name == "steamLoginSecure");
-
-            if (steamLoginSecureCookie is null || string.IsNullOrWhiteSpace(steamLoginSecureCookie.Value))
-            {
-                return $"<{commandBot.BotName}> Failed to get steamLoginSecure cookie";
-            }
-
-            var steamLoginSecureSplit = steamLoginSecureCookie.Value.Split("%7C%7C");
-
-            if (steamLoginSecureSplit.Length < 2)
-            {
-                return $"<{commandBot.BotName}> Bad steamLoginSecure cookie";
-            }
+            var steamLoginSecure = bot.ArchiWebHandler.WebBrowser.CookieContainer.GetCookieValue(ArchiWebHandler.SteamStoreURL, "steamLoginSecure");
             
+            if (string.IsNullOrWhiteSpace(steamLoginSecure))
+            {
+                return $"<{bot.BotName}> Failed to get steamLoginSecure";
+            }
+
+            var steamLoginSecureSplit = steamLoginSecure.Split("||");
+
             var steamId = steamLoginSecureSplit[0];
             var accessToken = steamLoginSecureSplit[1];
             
@@ -56,7 +50,7 @@ public class TfBackpackPlugin : IPlugin, IBotCommand2
             {
                 return $"<{commandBot.BotName}> Failed";
             }
-            
+
             return $"<{commandBot.BotName}> {response.Content.Result.NumBackpackSlots}";
         }
 
