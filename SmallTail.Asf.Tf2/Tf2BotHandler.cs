@@ -1,5 +1,6 @@
 using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Steam;
+using SmallTail.Asf.TfBackpack.Models;
 using SteamKit2;
 using SteamKit2.GC;
 using SteamKit2.GC.TF2.Internal;
@@ -77,32 +78,38 @@ public class Tf2BotHandler
         
         foreach (var subscribedType in response.Body.objects)
         {
-            if (subscribedType.type_id == 1)
+            switch (subscribedType.type_id)
             {
-                var items = subscribedType.object_data.Select(obj =>
+                case 1:
                 {
-                    using var memoryStream = new MemoryStream(obj);
+                    Items.Clear();
+                    
+                    var items = subscribedType.object_data.Select(obj =>
+                    {
+                        using var memoryStream = new MemoryStream(obj);
 
-                    var item = ProtoBuf.Serializer.Deserialize<CSOEconItem>(memoryStream);
+                        var item = ProtoBuf.Serializer.Deserialize<CSOEconItem>(memoryStream);
 
-                    return item;
-                }).ToList();
+                        return item;
+                    });
 
-                Items = items;
+                    Items.AddRange(items);
                 
-                _itemsLoaded?.SetResult();
-            }
-            
-            if (subscribedType.type_id == 7)
-            {
-                using var memoryStream = new MemoryStream(subscribedType.object_data[0]);
+                    _itemsLoaded?.SetResult();
+                    break;
+                }
+                case 7:
+                {
+                    using var memoryStream = new MemoryStream(subscribedType.object_data[0]);
                 
-                var client = ProtoBuf.Serializer.Deserialize<CSOEconGameAccountClient>(memoryStream);
+                    var client = ProtoBuf.Serializer.Deserialize<CSOEconGameAccountClient>(memoryStream);
 
-                IsPremium = !client.trial_account;
-                SlotCount = (client.trial_account ? 50u : 300u) + client.additional_backpack_slots;
+                    IsPremium = !client.trial_account;
+                    SlotCount = (client.trial_account ? 50u : 300u) + client.additional_backpack_slots;
                 
-                _accountLoaded?.SetResult();
+                    _accountLoaded?.SetResult();
+                    break;
+                }
             }
         }
     }
@@ -111,6 +118,14 @@ public class Tf2BotHandler
     {
         var request = new ClientGCMsgProtobuf<CMsgUseItem>((uint)EGCItemMsg.k_EMsgGCUseItemRequest);
         request.Body.item_id = itemId;
+        
+        _steamGameCoordinator.Send(request, AppId);
+    }
+    
+    public void DeleteItem(ulong itemId)
+    {
+        var request = new ClientGCMsg<DeleteMsg>();
+        request.Write(itemId);
         
         _steamGameCoordinator.Send(request, AppId);
     }

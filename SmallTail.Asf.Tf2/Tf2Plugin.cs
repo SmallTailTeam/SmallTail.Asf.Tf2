@@ -47,6 +47,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             "tf2slots" => HandleTf2Slots,
             "tf2premium" => HandleTf2Premium,
             "tf2use" => HandleTf2Use,
+            "tf2rm" => HandleTf2Rm,
             "tf2bec" => HandleTf2ExpanderCount,
             "tf2beu" => HandleTf2ExpanderUse,
             _ => null
@@ -93,6 +94,23 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         await tf2BotHandler.Disconnect();
             
         return $"<{bot.BotName}> Used";
+    }
+
+    private async Task<string?> HandleTf2Rm(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
+    {
+        if (!ulong.TryParse(args[2], out var itemId))
+        {
+            return $"<{args[1]}> Bad item id";
+        }
+
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.AccountLoaded.Task;
+        
+        tf2BotHandler.DeleteItem(itemId);
+
+        await tf2BotHandler.Disconnect();
+            
+        return $"<{bot.BotName}> Deleted";
     }
 
     private async Task<string?> HandleTf2ExpanderCount(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
