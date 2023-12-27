@@ -120,6 +120,21 @@ public class Tf2BotHandler
         _steamGameCoordinator.Send(request, AppId);
     }
     
+    public async Task UseItems(IReadOnlyCollection<CSOEconItem> items)
+    {
+        var last = items.Last();
+        
+        foreach (var item in items)
+        {
+            UseItem(item.id);
+            
+            if (item != last)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+    }
+    
     public void DeleteItem(ulong itemId)
     {
         var request = new ClientGCMsg<DeleteMsg>();

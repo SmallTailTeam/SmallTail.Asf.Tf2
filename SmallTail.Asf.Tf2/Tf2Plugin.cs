@@ -51,8 +51,12 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         {
             "tf2slots" => HandleTf2Slots,
             "tf2premium" => HandleTf2Premium,
-            "tf2use" => HandleTf2Use,
+            
+            "tf2useid" => HandleTf2UseId,
+            "tf2usedef" => HandleTf2UseDef,
+            
             "tf2rm" => HandleTf2Rm,
+            
             "tf2bec" => HandleTf2ExpanderCount,
             "tf2beu" => HandleTf2ExpanderUse,
             _ => null
@@ -84,7 +88,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         return $"<{bot.BotName}> {tf2BotHandler.IsPremium.ToString()}";
     }
 
-    private async Task<string?> HandleTf2Use(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
+    private async Task<string?> HandleTf2UseId(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
     {
         if (args.Length < 3)
         {
@@ -100,6 +104,40 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         await waiters.AccountLoaded.Task;
         
         tf2BotHandler.UseItem(itemId);
+
+        await tf2BotHandler.Disconnect();
+            
+        return $"<{bot.BotName}> Used";
+    }
+
+    private async Task<string?> HandleTf2UseDef(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
+    {
+        if (args.Length < 3)
+        {
+            return $"<{bot.BotName}> item def argument is required";
+        }
+        
+        if (!uint.TryParse(args[2], out var defIndex))
+        {
+            return $"<{args[1]}> Bad item def";
+        }
+        
+        if (args.Length < 4)
+        {
+            return $"<{bot.BotName}> count argument is required, either a number or all";
+        }
+
+        var count = args[3].ToLower() == "all" ? int.MaxValue : int.Parse(args[3]);
+
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.ItemsLoaded.Task;
+        
+        var items = tf2BotHandler.Items
+            .Where(i => i.def_index == defIndex)
+            .Take(count)
+            .ToList();
+
+        await tf2BotHandler.UseItems(items);
 
         await tf2BotHandler.Disconnect();
             
@@ -155,17 +193,10 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         
         var backpackExtenders = tf2BotHandler.Items
             .Where(i => i.def_index == Tf2Items.BackpackExpander)
+            .Take(count)
             .ToList();
         
-        foreach (var backpackExtender in backpackExtenders.Take(count))
-        {
-            tf2BotHandler.UseItem(backpackExtender.id);
-            
-            if (backpackExtender != backpackExtenders.Last())
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1));
-            }
-        }
+        await tf2BotHandler.UseItems(backpackExtenders);
 
         await tf2BotHandler.Disconnect();
 
