@@ -139,6 +139,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
 
         if (items.Count < 1)
         {
+            await tf2BotHandler.Disconnect();
             return $"<{bot.BotName}> Nothing to use";
         }
 
@@ -203,6 +204,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
 
         if (backpackExtenders.Count < 1)
         {
+            await tf2BotHandler.Disconnect();
             return $"<{bot.BotName}> Nothing to use";
         }
         
