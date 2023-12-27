@@ -42,7 +42,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             return $"<{commandBot.BotName}> Failed to get Tf2BotHandler";
         }
         
-        Func<Bot, Tf2BotHandler, string[], Task<string?>>? handler = args[0] switch
+        Func<Bot, Tf2BotHandler, string[], Task<string?>>? handler = args[0].ToLower() switch
         {
             "tf2slots" => HandleTf2Slots,
             "tf2premium" => HandleTf2Premium,
