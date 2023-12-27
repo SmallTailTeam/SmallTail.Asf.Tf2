@@ -93,7 +93,7 @@ public class Tf2BotHandler
 
                     Items.AddRange(items);
                 
-                    _itemsLoaded?.SetResult();
+                    _itemsLoaded?.TrySetResult();
                     break;
                 }
                 case 7:
@@ -105,7 +105,7 @@ public class Tf2BotHandler
                     IsPremium = !client.trial_account;
                     SlotCount = (client.trial_account ? 50u : 300u) + client.additional_backpack_slots;
                 
-                    _accountLoaded?.SetResult();
+                    _accountLoaded?.TrySetResult();
                     break;
                 }
             }
