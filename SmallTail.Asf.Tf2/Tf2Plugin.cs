@@ -4,7 +4,6 @@ using System.Reflection;
 using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Plugins.Interfaces;
 using ArchiSteamFarm.Steam;
-using SmallTail.Asf.TfBackpack.Models;
 using SteamKit2;
 
 namespace SmallTail.Asf.TfBackpack;
@@ -29,7 +28,9 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             return null;
         }
         
-        var commandBot = Bot.GetBot(args[1]);
+        var commandBot = Bot.BotsReadOnly?
+            .FirstOrDefault(b => b.Key.ToLower() == args[1].ToLower())
+            .Value;
 
         if (commandBot is null)
         {
@@ -55,7 +56,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         {
             return null;
         }
-
+        
         return await handler(commandBot, tf2BotHandler, args);
     }
 
@@ -114,7 +115,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             return $"<{bot.BotName}> count argument is required, either a number or all";
         }
 
-        var count = args[2] == "all" ? int.MaxValue : int.Parse(args[2]);
+        var count = args[2].ToLower() == "all" ? int.MaxValue : int.Parse(args[2]);
         
         var waiters = await tf2BotHandler.Connect();
         await waiters.ItemsLoaded.Task;
