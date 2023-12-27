@@ -101,7 +101,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         await tf2BotHandler.Disconnect();
         
         var backpackExtenders = tf2BotHandler.Items
-            .Where(i => i.def_index == Tf2Items.BackpackExtender)
+            .Where(i => i.def_index == Tf2Items.BackpackExpander)
             .ToList();
 
         return $"<{bot.BotName}> {backpackExtenders.Count}";
@@ -120,7 +120,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         await waiters.ItemsLoaded.Task;
         
         var backpackExtenders = tf2BotHandler.Items
-            .Where(i => i.def_index == Tf2Items.BackpackExtender)
+            .Where(i => i.def_index == Tf2Items.BackpackExpander)
             .ToList();
         
         foreach (var backpackExtender in backpackExtenders.Take(count))
