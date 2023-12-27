@@ -137,11 +137,16 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             .Take(count)
             .ToList();
 
+        if (items.Count < 1)
+        {
+            return $"<{bot.BotName}> Nothing to use";
+        }
+
         await tf2BotHandler.UseItems(items);
 
         await tf2BotHandler.Disconnect();
             
-        return $"<{bot.BotName}> Used";
+        return $"<{bot.BotName}> Used {items.Count}";
     }
 
     private async Task<string?> HandleTf2Rm(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
@@ -195,6 +200,11 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             .Where(i => i.def_index == Tf2Items.BackpackExpander)
             .Take(count)
             .ToList();
+
+        if (backpackExtenders.Count < 1)
+        {
+            return $"<{bot.BotName}> Nothing to use";
+        }
         
         await tf2BotHandler.UseItems(backpackExtenders);
 
