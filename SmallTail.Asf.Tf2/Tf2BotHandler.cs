@@ -1,3 +1,4 @@
+using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Steam;
 using SteamKit2;
 using SteamKit2.GC;
@@ -9,12 +10,15 @@ public class Tf2BotHandler
 {
     private const uint AppId = 440;
     
+    public bool IsPremium;
+    public uint SlotCount;
+    public List<CSOEconItem> Items = new();
+    
     private readonly Bot _bot;
     private readonly SteamGameCoordinator _steamGameCoordinator;
 
-    private TaskCompletionSource? _connectRequest;
-    private TaskCompletionSource<bool>? _isPremiumRequest;
-    private TaskCompletionSource<uint>? _slotCountRequest;
+    private TaskCompletionSource? _accountLoaded;
+    private TaskCompletionSource? _itemsLoaded;
 
     public Tf2BotHandler(Bot bot)
     {
@@ -23,21 +27,20 @@ public class Tf2BotHandler
         _steamGameCoordinator = _bot.GetHandler<SteamGameCoordinator>()!;
     }
 
-    private async Task Connect()
+    public async Task<(TaskCompletionSource AccountLoaded, TaskCompletionSource ItemsLoaded)> Connect()
     {
-        _connectRequest = new TaskCompletionSource();
+        _accountLoaded = new TaskCompletionSource();
+        _itemsLoaded = new TaskCompletionSource();
         
         await _bot.Actions.Play([AppId]);
         
         var clientHello = new ClientGCMsgProtobuf<CMsgClientHello>((uint)EGCBaseClientMsg.k_EMsgGCClientHello);
         _steamGameCoordinator.Send(clientHello, AppId);
 
-        await _connectRequest.Task;
-
-        _connectRequest = null;
+        return (_accountLoaded, _itemsLoaded);
     }
 
-    private async Task Disconnect()
+    public async Task Disconnect()
     {
         await _bot.Actions.Play([]);
 
@@ -46,20 +49,16 @@ public class Tf2BotHandler
 
     public void OnGCMessage(SteamGameCoordinator.MessageCallback callback)
     {
+        ASF.ArchiLogger.LogGenericInfo($"OnGCMessage : {callback.EMsg}");
+        
         Action<SteamGameCoordinator.MessageCallback>? handler = callback.EMsg switch
         {
-            (uint)EGCBaseClientMsg.k_EMsgGCClientWelcome => HandleWelcome,
             (uint)ESOMsg.k_ESOMsg_CacheSubscriptionCheck => HandleCacheSubscriptionCheck,
             (uint)ESOMsg.k_ESOMsg_CacheSubscribed => HandleCacheSubscribed,
             _ => null
         };
 
         handler?.Invoke(callback);
-    }
-
-    private void HandleWelcome(SteamGameCoordinator.MessageCallback callback)
-    {
-        _connectRequest?.SetResult();
     }
 
     private void HandleCacheSubscriptionCheck(SteamGameCoordinator.MessageCallback callback)
@@ -78,57 +77,41 @@ public class Tf2BotHandler
         
         foreach (var subscribedType in response.Body.objects)
         {
+            if (subscribedType.type_id == 1)
+            {
+                var items = subscribedType.object_data.Select(obj =>
+                {
+                    using var memoryStream = new MemoryStream(obj);
+
+                    var item = ProtoBuf.Serializer.Deserialize<CSOEconItem>(memoryStream);
+
+                    return item;
+                }).ToList();
+
+                Items = items;
+                
+                _itemsLoaded?.SetResult();
+            }
+            
             if (subscribedType.type_id == 7)
             {
                 using var memoryStream = new MemoryStream(subscribedType.object_data[0]);
                 
                 var client = ProtoBuf.Serializer.Deserialize<CSOEconGameAccountClient>(memoryStream);
 
-                _isPremiumRequest?.SetResult(!client.trial_account);
-                _slotCountRequest?.SetResult((client.trial_account ? 50u : 300u) + client.additional_backpack_slots);
+                IsPremium = !client.trial_account;
+                SlotCount = (client.trial_account ? 50u : 300u) + client.additional_backpack_slots;
+                
+                _accountLoaded?.SetResult();
             }
         }
     }
-
-    public async Task<uint> GetSlotCount()
+    
+    public void UseItem(ulong itemId)
     {
-        _slotCountRequest = new TaskCompletionSource<uint>();
+        var request = new ClientGCMsgProtobuf<CMsgUseItem>((uint)EGCItemMsg.k_EMsgGCUseItemRequest);
+        request.Body.item_id = itemId;
         
-        await Connect();
-
-        var slotCount = await _slotCountRequest.Task;
-
-        _slotCountRequest = null;
-
-        await Disconnect();
-        
-        return slotCount;
-    }
-
-    public async Task<bool> GetIsPremium()
-    {
-        _isPremiumRequest = new TaskCompletionSource<bool>();
-        
-        await Connect();
-        
-        var isPremium = await _isPremiumRequest.Task;
-
-        _isPremiumRequest = null;
-
-        await Disconnect();
-        
-        return isPremium;
-    }
-
-    public async Task UseItem(ulong itemId)
-    {
-        await Connect();
-        
-        var useItemRequest = new ClientGCMsgProtobuf<CMsgUseItem>((uint)EGCItemMsg.k_EMsgGCUseItemRequest);
-        useItemRequest.Body.item_id = itemId;
-        
-        _steamGameCoordinator.Send(useItemRequest, AppId);
-
-        await Disconnect();
+        _steamGameCoordinator.Send(request, AppId);
     }
 }

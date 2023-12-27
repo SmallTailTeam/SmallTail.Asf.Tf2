@@ -4,6 +4,7 @@ using System.Reflection;
 using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Plugins.Interfaces;
 using ArchiSteamFarm.Steam;
+using SmallTail.Asf.TfBackpack.Models;
 using SteamKit2;
 
 namespace SmallTail.Asf.TfBackpack;
@@ -16,20 +17,37 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
 
     private readonly ConcurrentDictionary<string, Tf2BotHandler> _tf2BotHandlers = new();
     
-    public Task OnLoaded()
+    public async Task OnLoaded()
     {
         ASF.ArchiLogger.LogGenericInfo("SmallTail TF2 loaded! ^-^");
-        
-        return Task.CompletedTask;
     }
     
     public async Task<string?> OnBotCommand(Bot bot, EAccess access, string message, string[] args, ulong steamID = 0)
     {
-        Func<string[], Task<string?>>? handler = args[0] switch
+        if (args.Length < 2)
+        {
+            return null;
+        }
+        
+        var commandBot = Bot.GetBot(args[1]);
+
+        if (commandBot is null)
+        {
+            return $"<{args[1]}> Bot not found";
+        }
+
+        if (!_tf2BotHandlers.TryGetValue(commandBot.BotName, out var tf2BotHandler))
+        {
+            return $"<{commandBot.BotName}> Failed to get Tf2BotHandler";
+        }
+        
+        Func<Bot, Tf2BotHandler, string[], Task<string?>>? handler = args[0] switch
         {
             "tf2slots" => HandleTf2Slots,
             "tf2premium" => HandleTf2Premium,
             "tf2use" => HandleTf2Use,
+            "tf2bec" => HandleTf2ExpanderCount,
+            "tf2beu" => HandleTf2ExpanderUse,
             _ => null
         };
 
@@ -38,69 +56,86 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             return null;
         }
 
-        return await handler(args);
+        return await handler(commandBot, tf2BotHandler, args);
     }
 
-    private async Task<string?> HandleTf2Slots(string[] args)
+    private async Task<string?> HandleTf2Slots(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
     {
-        var bot = Bot.GetBot(args[1]);
-
-        if (bot is null)
-        {
-            return $"<{args[1]}> Bot not found";
-        }
-
-        if (!_tf2BotHandlers.TryGetValue(bot.BotName, out var tf2BotHandler))
-        {
-            return $"<{bot.BotName}> Failed to get Tf2BotHandler";
-        }
-
-        var slotCount = await tf2BotHandler.GetSlotCount();
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.AccountLoaded.Task;
+        await tf2BotHandler.Disconnect();
             
-        return $"<{bot.BotName}> {slotCount}";
+        return $"<{bot.BotName}> {tf2BotHandler.SlotCount}";
     }
 
-    private async Task<string?> HandleTf2Premium(string[] args)
+    private async Task<string?> HandleTf2Premium(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
     {
-        var bot = Bot.GetBot(args[1]);
-
-        if (bot is null)
-        {
-            return $"<{args[1]}> Bot not found";
-        }
-
-        if (!_tf2BotHandlers.TryGetValue(bot.BotName, out var tf2BotHandler))
-        {
-            return $"<{bot.BotName}> Failed to get Tf2BotHandler";
-        }
-
-        var isPremium = await tf2BotHandler.GetIsPremium();
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.AccountLoaded.Task;
+        await tf2BotHandler.Disconnect();
             
-        return $"<{bot.BotName}> {isPremium.ToString()}";
+        return $"<{bot.BotName}> {tf2BotHandler.IsPremium.ToString()}";
     }
 
-    private async Task<string?> HandleTf2Use(string[] args)
+    private async Task<string?> HandleTf2Use(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
     {
-        var bot = Bot.GetBot(args[1]);
-
-        if (bot is null)
-        {
-            return $"<{args[1]}> Bot not found";
-        }
-
         if (!ulong.TryParse(args[2], out var itemId))
         {
             return $"<{args[1]}> Bad item id";
         }
 
-        if (!_tf2BotHandlers.TryGetValue(bot.BotName, out var tf2BotHandler))
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.AccountLoaded.Task;
+        
+        tf2BotHandler.UseItem(itemId);
+
+        await tf2BotHandler.Disconnect();
+            
+        return $"<{bot.BotName}> Used";
+    }
+
+    private async Task<string?> HandleTf2ExpanderCount(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
+    {
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.ItemsLoaded.Task;
+        await tf2BotHandler.Disconnect();
+        
+        var backpackExtenders = tf2BotHandler.Items
+            .Where(i => i.def_index == Tf2Items.BackpackExtender)
+            .ToList();
+
+        return $"<{bot.BotName}> {backpackExtenders.Count}";
+    }
+
+    private async Task<string?> HandleTf2ExpanderUse(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
+    {
+        if (args.Length < 3)
         {
-            return $"<{bot.BotName}> Failed to get Tf2BotHandler";
+            return $"<{bot.BotName}> count argument is required, either a number or all";
         }
 
-        await tf2BotHandler.UseItem(itemId);
+        var count = args[2] == "all" ? int.MaxValue : int.Parse(args[2]);
+        
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.ItemsLoaded.Task;
+        
+        var backpackExtenders = tf2BotHandler.Items
+            .Where(i => i.def_index == Tf2Items.BackpackExtender)
+            .ToList();
+        
+        foreach (var backpackExtender in backpackExtenders.Take(count))
+        {
+            tf2BotHandler.UseItem(backpackExtender.id);
             
-        return $"<{bot.BotName}> Done";
+            if (backpackExtender != backpackExtenders.Last())
+            {
+                await Task.Delay(TimeSpan.FromSeconds(1));
+            }
+        }
+
+        await tf2BotHandler.Disconnect();
+
+        return $"<{bot.BotName}> Used {backpackExtenders.Count}";
     }
 
     public Task OnBotSteamCallbacksInit(Bot bot, CallbackManager callbackManager)
