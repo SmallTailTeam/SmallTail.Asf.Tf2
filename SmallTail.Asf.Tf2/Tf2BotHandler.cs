@@ -50,8 +50,6 @@ public class Tf2BotHandler
 
     public void OnGCMessage(SteamGameCoordinator.MessageCallback callback)
     {
-        ASF.ArchiLogger.LogGenericInfo($"OnGCMessage : {callback.EMsg}");
-        
         Action<SteamGameCoordinator.MessageCallback>? handler = callback.EMsg switch
         {
             (uint)ESOMsg.k_ESOMsg_CacheSubscriptionCheck => HandleCacheSubscriptionCheck,

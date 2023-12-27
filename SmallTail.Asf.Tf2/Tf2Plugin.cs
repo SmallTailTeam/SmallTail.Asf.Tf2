@@ -27,6 +27,11 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         {
             return null;
         }
+
+        if (args[1].ToLower() == "asf")
+        {
+            return null;
+        }
         
         var commandBot = Bot.BotsReadOnly?
             .FirstOrDefault(b => b.Key.ToLower() == args[1].ToLower())
@@ -81,6 +86,11 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
 
     private async Task<string?> HandleTf2Use(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
     {
+        if (args.Length < 3)
+        {
+            return $"<{bot.BotName}> item id argument is required";
+        }
+        
         if (!ulong.TryParse(args[2], out var itemId))
         {
             return $"<{args[1]}> Bad item id";
@@ -98,6 +108,11 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
 
     private async Task<string?> HandleTf2Rm(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
     {
+        if (args.Length < 3)
+        {
+            return $"<{bot.BotName}> item id argument is required";
+        }
+        
         if (!ulong.TryParse(args[2], out var itemId))
         {
             return $"<{args[1]}> Bad item id";
