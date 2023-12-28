@@ -173,7 +173,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
                     break;
                 }
                 
-                await tf2BotHandler.DeleteItems(tf2BotHandler.Items);
+                await tf2BotHandler.DeleteItems(tf2BotHandler.Items.ToList());
 
                 await Task.Delay(TimeSpan.FromSeconds(3));
             }

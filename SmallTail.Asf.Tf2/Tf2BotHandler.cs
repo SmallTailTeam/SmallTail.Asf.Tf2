@@ -53,25 +53,26 @@ public class Tf2BotHandler
     {
         Action<SteamGameCoordinator.MessageCallback>? handler = callback.EMsg switch
         {
-            (uint)ESOMsg.k_ESOMsg_CacheSubscriptionCheck => HandleCacheSubscriptionCheck,
-            (uint)ESOMsg.k_ESOMsg_CacheSubscribed => HandleCacheSubscribed,
+            (uint)ESOMsg.k_ESOMsg_CacheSubscriptionCheck => HandleSoCoacheSubscriptionCheck,
+            (uint)ESOMsg.k_ESOMsg_CacheSubscribed => HandleSoCacheSubscribed,
+            (uint)ESOMsg.k_ESOMsg_Update => HandleSoUpdate,
+            (uint)ESOMsg.k_ESOMsg_UpdateMultiple => HandleSoUpdateMultiple,
+            (uint)ESOMsg.k_ESOMsg_Destroy => HandleSoDestroy,
             _ => null
         };
 
         handler?.Invoke(callback);
     }
 
-    private void HandleCacheSubscriptionCheck(SteamGameCoordinator.MessageCallback callback)
+    private void HandleSoCoacheSubscriptionCheck(SteamGameCoordinator.MessageCallback callback)
     {
-        var response = new ClientGCMsgProtobuf<CMsgSOCacheSubscriptionCheck>(callback.Message);
-        
         var refreshRequest = new ClientGCMsgProtobuf<CMsgSOCacheSubscriptionRefresh>((uint)ESOMsg.k_ESOMsg_CacheSubscriptionRefresh);
-        refreshRequest.Body.owner = response.Body.owner;
+        refreshRequest.Body.owner = _bot.SteamID;
             
         _steamGameCoordinator.Send(refreshRequest, AppId);
     }
 
-    private void HandleCacheSubscribed(SteamGameCoordinator.MessageCallback callback)
+    private void HandleSoCacheSubscribed(SteamGameCoordinator.MessageCallback callback)
     {
         var response = new ClientGCMsgProtobuf<CMsgSOCacheSubscribed>(callback.Message);
         
@@ -81,8 +82,6 @@ public class Tf2BotHandler
             {
                 case 1:
                 {
-                    Items.Clear();
-                    
                     var items = subscribedType.object_data.Select(obj =>
                     {
                         using var memoryStream = new MemoryStream(obj);
@@ -90,9 +89,9 @@ public class Tf2BotHandler
                         var item = ProtoBuf.Serializer.Deserialize<CSOEconItem>(memoryStream);
 
                         return item;
-                    });
+                    }).ToList();
 
-                    Items.AddRange(items);
+                    Items = items;
                 
                     _itemsLoaded?.TrySetResult();
                     break;
@@ -109,6 +108,84 @@ public class Tf2BotHandler
                     _accountLoaded?.TrySetResult();
                     break;
                 }
+            }
+        }
+    }
+
+    private void HandleSoUpdate(SteamGameCoordinator.MessageCallback callback)
+    {
+        var response = new ClientGCMsgProtobuf<CMsgSOSingleObject>(callback.Message);
+        
+        var singleObject = ProtoBuf.Serializer.Deserialize<CMsgSOMultipleObjects.SingleObject>(response.Payload);
+        
+        ProcessSingleObjectUpdate(singleObject);
+    }
+
+    private void HandleSoUpdateMultiple(SteamGameCoordinator.MessageCallback callback)
+    {
+        var response = new ClientGCMsgProtobuf<CMsgSOMultipleObjects>(callback.Message);
+        
+        var multipleObjects = ProtoBuf.Serializer.Deserialize<CMsgSOMultipleObjects>(response.Payload);
+        
+        foreach (var singleObject in multipleObjects.objects)
+        {
+            ProcessSingleObjectUpdate(singleObject);
+        }
+    }
+
+    private void ProcessSingleObjectUpdate(CMsgSOMultipleObjects.SingleObject singleObject)
+    {
+        switch (singleObject.type_id)
+        {
+            case 1:
+            {
+                using var memoryStream = new MemoryStream(singleObject.object_data);
+
+                var item = ProtoBuf.Serializer.Deserialize<CSOEconItem>(memoryStream);
+                
+                for (var i = 0; i < Items.Count; i++)
+                {
+                    if (Items[i].id == item.id)
+                    {
+                        Items[i] = item;
+                    }
+                }
+                
+                break;
+            }
+            case 7:
+            {
+                using var memoryStream = new MemoryStream(singleObject.object_data);
+                
+                var client = ProtoBuf.Serializer.Deserialize<CSOEconGameAccountClient>(memoryStream);
+
+                IsPremium = !client.trial_account;
+                SlotCount = (client.trial_account ? 50u : 300u) + client.additional_backpack_slots;
+                
+                break;
+            }
+        }
+    }
+
+    private void HandleSoDestroy(SteamGameCoordinator.MessageCallback callback)
+    {
+        var response = new ClientGCMsgProtobuf<CMsgSOSingleObject>(callback.Message);
+        var singleObject = ProtoBuf.Serializer.Deserialize<CMsgSOMultipleObjects.SingleObject>(response.Payload);
+
+        if (singleObject.type_id != 1)
+        {
+            return; // Not an item
+        }
+        
+        using var memoryStream = new MemoryStream(singleObject.object_data);
+
+        var item = ProtoBuf.Serializer.Deserialize<CSOEconItem>(memoryStream);
+        
+        for (var i = 0; i < Items.Count; i++)
+        {
+            if (Items[i].id == item.id)
+            {
+                Items.RemoveAt(i);
             }
         }
     }
@@ -130,7 +207,7 @@ public class Tf2BotHandler
         
         var last = items.Last();
         
-        foreach (var item in items.ToList())
+        foreach (var item in items)
         {
             UseItem(item.id);
             
@@ -158,7 +235,7 @@ public class Tf2BotHandler
         
         var last = items.Last();
         
-        foreach (var item in items.ToList())
+        foreach (var item in items)
         {
             DeleteItem(item.id);
             
