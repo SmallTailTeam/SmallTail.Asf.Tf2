@@ -1,4 +1,3 @@
-using ArchiSteamFarm.Core;
 using ArchiSteamFarm.Steam;
 using SmallTail.Asf.TfBackpack.Models;
 using SteamKit2;
@@ -10,6 +9,8 @@ namespace SmallTail.Asf.TfBackpack;
 public class Tf2BotHandler
 {
     private const uint AppId = 440;
+    private static readonly TimeSpan ItemsUseDelay = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan ItemsDeleteDelay = TimeSpan.FromSeconds(1);
     
     public bool IsPremium;
     public uint SlotCount;
@@ -122,6 +123,11 @@ public class Tf2BotHandler
     
     public async Task UseItems(IReadOnlyCollection<CSOEconItem> items)
     {
+        if (items.Count < 1)
+        {
+            return;
+        }
+        
         var last = items.Last();
         
         foreach (var item in items)
@@ -130,7 +136,7 @@ public class Tf2BotHandler
             
             if (item != last)
             {
-                await Task.Delay(TimeSpan.FromSeconds(1));
+                await Task.Delay(ItemsUseDelay);
             }
         }
     }
@@ -141,5 +147,25 @@ public class Tf2BotHandler
         request.Write(itemId);
         
         _steamGameCoordinator.Send(request, AppId);
+    }
+    
+    public async Task DeleteItems(IReadOnlyCollection<CSOEconItem> items)
+    {
+        if (items.Count < 1)
+        {
+            return;
+        }
+        
+        var last = items.Last();
+        
+        foreach (var item in items)
+        {
+            DeleteItem(item.id);
+            
+            if (item != last)
+            {
+                await Task.Delay(ItemsDeleteDelay);
+            }
+        }
     }
 }

@@ -28,26 +28,15 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             return null;
         }
 
-        if (args[1].ToLower() == "asf")
+        var command = args[0].ToLower();
+        var botName = args[1].ToLower();
+        
+        if (botName == "asf")
         {
             return null;
         }
         
-        var commandBot = Bot.BotsReadOnly?
-            .FirstOrDefault(b => b.Key.ToLower() == args[1].ToLower())
-            .Value;
-
-        if (commandBot is null)
-        {
-            return $"<{args[1]}> Bot not found";
-        }
-
-        if (!_tf2BotHandlers.TryGetValue(commandBot.BotName, out var tf2BotHandler))
-        {
-            return $"<{commandBot.BotName}> Failed to get Tf2BotHandler";
-        }
-        
-        Func<Bot, Tf2BotHandler, string[], Task<string?>>? handler = args[0].ToLower() switch
+        Func<Bot, Tf2BotHandler, string[], Task<string?>>? handler = command switch
         {
             "tf2slots" => HandleTf2Slots,
             "tf2premium" => HandleTf2Premium,
@@ -65,6 +54,20 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         if (handler is null)
         {
             return null;
+        }
+        
+        var commandBot = Bot.BotsReadOnly?
+            .FirstOrDefault(b => b.Key.ToLower() == botName)
+            .Value;
+
+        if (commandBot is null)
+        {
+            return $"<{botName}> Bot not found";
+        }
+
+        if (!_tf2BotHandlers.TryGetValue(commandBot.BotName, out var tf2BotHandler))
+        {
+            return $"<{commandBot.BotName}> Failed to get Tf2BotHandler";
         }
         
         return await handler(commandBot, tf2BotHandler, args);
@@ -154,22 +157,40 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> item id argument is required";
+            return $"<{bot.BotName}> Item id argument is required";
         }
-        
-        if (!ulong.TryParse(args[2], out var itemId))
+
+        var itemIdArg = args[2];
+
+        if (itemIdArg == "all")
         {
-            return $"<{args[1]}> Bad item id";
-        }
+            var waiters = await tf2BotHandler.Connect();
+            await waiters.ItemsLoaded.Task;
 
-        var waiters = await tf2BotHandler.Connect();
-        await waiters.AccountLoaded.Task;
+            var itemCount = tf2BotHandler.Items.Count;
         
-        tf2BotHandler.DeleteItem(itemId);
+            await tf2BotHandler.DeleteItems(tf2BotHandler.Items);
 
-        await tf2BotHandler.Disconnect();
+            await tf2BotHandler.Disconnect();
             
-        return $"<{bot.BotName}> Deleted";
+            return $"<{bot.BotName}> Deleted {itemCount}";
+        }
+        else
+        {
+            if (!ulong.TryParse(itemIdArg, out var itemId))
+            {
+                return $"<{bot.BotName}> Bad item id";
+            }
+            
+            var waiters = await tf2BotHandler.Connect();
+            await waiters.AccountLoaded.Task;
+        
+            tf2BotHandler.DeleteItem(itemId);
+
+            await tf2BotHandler.Disconnect();
+            
+            return $"<{bot.BotName}> Deleted";
+        }
     }
 
     private async Task<string?> HandleTf2ExpanderCount(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
