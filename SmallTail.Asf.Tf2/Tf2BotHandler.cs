@@ -130,7 +130,7 @@ public class Tf2BotHandler
         
         var last = items.Last();
         
-        foreach (var item in items)
+        foreach (var item in items.ToList())
         {
             UseItem(item.id);
             
@@ -158,7 +158,7 @@ public class Tf2BotHandler
         
         var last = items.Last();
         
-        foreach (var item in items)
+        foreach (var item in items.ToList())
         {
             DeleteItem(item.id);
             

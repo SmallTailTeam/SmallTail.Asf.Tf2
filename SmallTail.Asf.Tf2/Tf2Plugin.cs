@@ -161,13 +161,26 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             var waiters = await tf2BotHandler.Connect();
             await waiters.ItemsLoaded.Task;
 
-            var itemCount = tf2BotHandler.Items.Count;
-        
-            await tf2BotHandler.DeleteItems(tf2BotHandler.Items);
+            var originalItemCount = tf2BotHandler.Items.Count;
+            var currentItemCount = 0;
+
+            for (var i = 0; i < 3; i++)
+            {
+                currentItemCount = tf2BotHandler.Items.Count;
+
+                if (currentItemCount == 0)
+                {
+                    break;
+                }
+                
+                await tf2BotHandler.DeleteItems(tf2BotHandler.Items);
+
+                await Task.Delay(TimeSpan.FromSeconds(3));
+            }
 
             await tf2BotHandler.Disconnect();
             
-            return $"<{bot.BotName}> Deleted {itemCount}";
+            return $"<{bot.BotName}> Item count {originalItemCount} -> {currentItemCount}";
         }
         else
         {
