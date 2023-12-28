@@ -95,7 +95,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> <Item id> argument is required";
+            return $"<{bot.BotName}> <itemId> argument is required";
         }
         
         if (!ulong.TryParse(args[2], out var itemId))
@@ -117,7 +117,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> <Item def> argument is required";
+            return $"<{bot.BotName}> <itemDef> argument is required";
         }
         
         if (!uint.TryParse(args[2], out var defIndex))
@@ -127,7 +127,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         
         if (args.Length < 4)
         {
-            return $"<{bot.BotName}> count argument is required, either a number or all";
+            return $"<{bot.BotName}> <count | all> argument is required";
         }
 
         var count = args[3].ToLower() == "all" ? int.MaxValue : int.Parse(args[3]);
@@ -151,7 +151,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> <Item id | all> argument is required";
+            return $"<{bot.BotName}> <itemId | all> argument is required";
         }
 
         var itemIdArg = args[2];
@@ -204,7 +204,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> <Count | all> argument is required";
+            return $"<{bot.BotName}> <count | all> argument is required";
         }
 
         var count = args[2].ToLower() == "all" ? int.MaxValue : int.Parse(args[2]);
