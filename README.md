@@ -3,7 +3,7 @@
 - `tf2slots <bot>` TF2 backpack slots
 - `tf2premium <bot>` TF2 premium status
 - `tf2useid <bot> <itemId>` Use TF2 item by id
-- `tf2usedef <bot> <itemId>` Use TF2 item by def index
-- `tf2rm <bot> <itemId>` Delete TF2 item
+- `tf2usedef <bot> <defIndex>` Use TF2 item by def index
+- `tf2rm <bot> <itemId | all>` Delete TF2 items
 - `tf2bec <bot>` Show backpack expander count
-- `tf2beu <bot> <amount/all>` Use backpack expanders
+- `tf2beu <bot> <count | all>` Use backpack expanders

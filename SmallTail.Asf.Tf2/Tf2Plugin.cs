@@ -95,7 +95,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> item id argument is required";
+            return $"<{bot.BotName}> <Item id> argument is required";
         }
         
         if (!ulong.TryParse(args[2], out var itemId))
@@ -117,7 +117,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> item def argument is required";
+            return $"<{bot.BotName}> <Item def> argument is required";
         }
         
         if (!uint.TryParse(args[2], out var defIndex))
@@ -139,13 +139,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             .Where(i => i.def_index == defIndex)
             .Take(count)
             .ToList();
-
-        if (items.Count < 1)
-        {
-            await tf2BotHandler.Disconnect();
-            return $"<{bot.BotName}> Nothing to use";
-        }
-
+        
         await tf2BotHandler.UseItems(items);
 
         await tf2BotHandler.Disconnect();
@@ -157,7 +151,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> Item id argument is required";
+            return $"<{bot.BotName}> <Item id | all> argument is required";
         }
 
         var itemIdArg = args[2];
@@ -210,7 +204,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 3)
         {
-            return $"<{bot.BotName}> count argument is required, either a number or all";
+            return $"<{bot.BotName}> <Count | all> argument is required";
         }
 
         var count = args[2].ToLower() == "all" ? int.MaxValue : int.Parse(args[2]);
@@ -222,12 +216,6 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             .Where(i => i.def_index == Tf2Items.BackpackExpander)
             .Take(count)
             .ToList();
-
-        if (backpackExtenders.Count < 1)
-        {
-            await tf2BotHandler.Disconnect();
-            return $"<{bot.BotName}> Nothing to use";
-        }
         
         await tf2BotHandler.UseItems(backpackExtenders);
 
