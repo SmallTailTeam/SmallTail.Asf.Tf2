@@ -45,6 +45,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
             "tf2usedef" => HandleTf2UseDef,
             
             "tf2rm" => HandleTf2Rm,
+            "tf2rmdef" => HandleTf2RmDef,
             
             "tf2bec" => HandleTf2ExpanderCount,
             "tf2beu" => HandleTf2ExpanderUse,
@@ -200,6 +201,31 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
         }
     }
 
+    private async Task<string?> HandleTf2RmDef(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
+    {
+        if (args.Length < 2)
+        {
+            return $"<{bot.BotName}> <itemDef > argument is required";
+        }
+
+        if (!uint.TryParse(args[2], out var defIndex))
+        {
+            return $"<{args[1]}> Bad item def";
+        }
+        
+        var waiters = await tf2BotHandler.Connect();
+        await waiters.ItemsLoaded.Task;
+        
+        var items = tf2BotHandler.Items
+            .Where(i => i.def_index == defIndex)
+            .ToList();
+
+        await tf2BotHandler.DeleteItems(items);
+
+        await tf2BotHandler.Disconnect();
+
+        return $"<{bot.BotName}> Deleted {items.Count}";
+    }
     private async Task<string?> HandleTf2ExpanderCount(Bot bot, Tf2BotHandler tf2BotHandler, string[] args)
     {
         var waiters = await tf2BotHandler.Connect();

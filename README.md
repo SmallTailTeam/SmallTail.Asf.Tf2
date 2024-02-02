@@ -5,5 +5,6 @@
 - `tf2useid <bot> <itemId>` Use TF2 item by id
 - `tf2usedef <bot> <defIndex> <count | all>` Use TF2 item by def index
 - `tf2rm <bot> <itemId | all>` Delete TF2 items
+- `tf2rmdef <bot> <defIndex>` Delete TF2 items by def index
 - `tf2bec <bot>` Show backpack expander count
 - `tf2beu <bot> <count | all>` Use backpack expanders
