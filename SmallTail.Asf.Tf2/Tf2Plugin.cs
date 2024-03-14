@@ -205,7 +205,7 @@ public class Tf2Plugin : IPlugin, IBotCommand2, IBotSteamClient
     {
         if (args.Length < 2)
         {
-            return $"<{bot.BotName}> <itemDef > argument is required";
+            return $"<{bot.BotName}> <itemDef> argument is required";
         }
 
         if (!uint.TryParse(args[2], out var defIndex))
